@@ -1,0 +1,2 @@
+
+app.use(bodyParser.text());

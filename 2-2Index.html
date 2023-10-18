@@ -1,18 +1,61 @@
-<!-- Cristiano micahel -->
+<!-- Cristiano Michael -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Dead Man's Switch</title>
-</head>
-<body>
-  <h1>Dead Man's Switch</h1>
-  <p id="status"></p>
-  <p id="number"></p>
-  <p id="timeout"></p>
-  <input type="number" id="userInput" placeholder="Enter the number">
-  <button id="submitButton">Submit</button>
-  <script src="2-2clientside.js"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <title>DeadManSwitch</title>
+    <style>
+      .input-container {
+        margin-bottom: 20px; /* Add margin to create space */
+      }
+    </style>
+  </head>
+  <body>
+    <form
+      id="Form"
+      method="post"
+      enctype="application/x-www-form-urlencoded"
+      target="_self"
+    >
+      <div class="input-container">
+        <label for="number">Confirm the number displayed below:</label>
+        <input id="number" name="number" type="number" min="0" max="20" />
+      </div>
+      <button>Confirm</button>
+    </form>
+    <div id="result"></div>
+    <div id="targetNum"></div>
+    <div id="timer"></div>
+  </body>
+  <script>
+    const formElement = document.getElementById("Form");
 
-</body>
+    const eventSource = new EventSource("/timer");
+    eventSource.onmessage = (e) => {
+      document.getElementById("timer").innerText = `${e.data}`;
+    };
+    eventSource.addEventListener("Timeout", (e) => {
+      document.getElementById("timer").innerText = `${e.data}`;
+      document.getElementById("result").innerText = `${e.data}`;
+      document.getElementById("Form").innerText = `${e.data}`;
+      eventSource.close();
+    });
+
+    formElement.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const formData = new FormData(formElement);
+      const formDataString = new URLSearchParams(formData).toString();
+      fetch("/checkNumber", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formDataString,
+      })
+        .then((response) => response.text())
+        .then((data) => {
+          document.getElementById("result").innerHTML = data;
+        });
+    });
+  </script>
 </html>

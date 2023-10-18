@@ -1,87 +1,63 @@
-//Cristiano Michael 3147571
-
-const express = require('express');
-const http = require('http');
-const path = require('path');
-
+const express = require("express");
 const app = express();
-const server = http.createServer(app);
+const port = 3000;
 
-const PORT = 3000;
-let timer;
-let correctNumber;
-let isActive = true; // Declare isActive as a global variable
-const interval = 10000;
+let targetNumber;
+let countdown = 10;
 
-function generateRandomNumber() {
-  return Math.floor(Math.random() * 100);
-}
+app.use(express.urlencoded({ extended: true }));
 
-function startSwitch(res, isActive) {
-    if (res.finished) {
-      return;
-    }
-  
-    correctNumber = generateRandomNumber();
-    const responseData = {
-      message: `Switch is active. Number to enter: ${correctNumber}`,
-    };
-    res.write(`data: ${JSON.stringify(responseData)}\n\n`);
-  
-    timer = setTimeout(() => {
-      if (!res.finished) {
-        const timeoutData = {
-          message: "Dead Man's Switch timeout",
-        };
-        res.write(`data: ${JSON.stringify(timeoutData)}\n\n`);
-        res.end();
-        isActive = false;
-      }
-    }, interval);
-  }
-  
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '2-2Index.html'));
+app.get("/", (req, res) => {
+  // Generate a new random target number and reset the countdown
+  targetNumber = Math.floor(Math.random() * 11);
+  countdown = 10;
+  res.status(200).sendFile(__dirname + "/2-2Index.html");
 });
 
-app.get('/2-2clientside.js', (req, res) => {
-    res.setHeader('Content-Type', 'text/javascript');
-    res.sendFile(path.join(__dirname, '2-2clientside.js'));
+app.get("/timer", (req, res) => {
+  console.log("Timer Started");
+
+  res.set({
+    Connection: "keep-alive",
+    "Content-Type": "text/event-stream",
   });
 
-  
-app.get('/events', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.flushHeaders();
+  const countdownInterval = setInterval(() => {
+    countdown--;
 
-  startSwitch(res, isActive);
-
-  req.on('close', () => {
-    clearInterval(timer);
-  });
-});
-
-app.post('/submit', express.json(), (req, res) => {
-    const userNumber = req.body.number;
-  
-    if (parseInt(userNumber) === correctNumber) {
-      clearTimeout(timer);
-      const successData = {
-        message: 'Correct number entered.',
-      };
-      res.json(successData);
+    if (countdown <= 0) {
+      // Send a Timeout event when countdown reaches zero
+      console.log("Time out reach... WHY IS THIS STILL NOT WORKING")
+      res.write("event: Timeout\ndata: TIMEOUT\n\n");
     } else {
-      const errorData = {
-        message: `Incorrect. Try again. Enter: ${correctNumber}`,
-      };
-      res.json(errorData);
+      // Send a countdown message
+      res.write(`data: Confirm ${targetNumber} in ${countdown} seconds!\n\n`);
     }
-  
-    startSwitch(res, isActive);
-  });
+  }, 1000);
 
-server.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  res.on("close", () => {
+    // Clear the countdown interval when the client closes the connection
+    clearInterval(countdownInterval);
+    res.end();
+  });
+});
+
+app.post("/checkNumber", (req, res) => {
+  const submittedNumber = parseInt(req.body.number, 10);
+
+  if (targetNumber === submittedNumber) {
+    // The submitted number is correct
+    console.log("Yes")
+    countdown = 10; // Reset the countdown
+    targetNumber = Math.floor(Math.random() * 21); // Generate a new target number
+    res.status(200).send("<p>Correct</p>");
+  } else {
+    // The submitted number is incorrect
+    res.status(200).send("<p>Incorrect</p>");
+    console.log("wrong")
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server is listening on http://localhost:${port}`);
 });

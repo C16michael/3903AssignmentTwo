@@ -29,5 +29,5 @@ app.ws('/accept-msg', (ws, req) => {
 });
 
 app.listen(port, () => {
-    console.log(`Running on http://localhost:${port}/test.html`);
+    console.log(`Running on http://localhost:${port}/chatroom.html`);
 });

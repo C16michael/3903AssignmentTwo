@@ -1,0 +1,44 @@
+<!-- Cristiano Michael -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Chatroom</title>
+</head>
+<body>
+<textarea id="chatTextArea" rows="10" cols="50" disabled></textarea>
+<form id="messageForm">
+    <input type="text" id="userName" placeholder="Your Name" required>
+    <input type="text" id="message" placeholder="Type your message" required>
+    <button type="submit">Send</button>
+</form>
+</body>
+<script>
+    const ws = new WebSocket('ws://localhost:3000/accept-msg');
+    const chatTextArea = document.getElementById('chatTextArea');
+    const messageForm = document.getElementById('messageForm');
+    const userNameInput = document.getElementById('userName');
+    const messageInput = document.getElementById('message');
+
+    ws.onmessage = function (event) {
+        const messageData = JSON.parse(event.data);
+        chatTextArea.value += `${messageData.user}: ${messageData.message}\n`;
+    };
+
+    messageForm.onsubmit = function (e) {
+        e.preventDefault();
+
+        const userName = userNameInput.value;
+        const message = messageInput.value;
+
+        if (userName && message) {
+            const messageData = {
+                user: userName,
+                message: message,
+            };
+            ws.send(JSON.stringify(messageData));
+            messageInput.value = '';
+        }
+    };
+</script>
+</html>
